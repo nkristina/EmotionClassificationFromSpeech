@@ -12,6 +12,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+audio_duration = 3
+sampling_rate = 22050
+input_length = sampling_rate * audio_duration
+
 class EmotionSpeechDataset(Dataset):
 
     def __init__(self, annotations_file):
@@ -25,10 +29,17 @@ class EmotionSpeechDataset(Dataset):
         label = self._get_audio_sample_label(index)
 
         signal, fs = librosa.load(audio_sample_path)
-        signal, _ = librosa.effects.trim(signal, top_db = 30)
+        signal, _ = librosa.effects.trim(signal, top_db = 25)
+
+        if len(signal) > input_length:
+            signal = signal[0:input_length]
+        elif  input_length > len(signal):
+            max_offset = input_length - len(signal)  
+            signal = np.pad(signal, (0, max_offset), "constant")
 
         mel_spectrogram = self._return_mel_spectrogram(signal, fs)
         mel_spectrogram = torch.from_numpy(mel_spectrogram)
+    
         return mel_spectrogram, label
     
     def _get_audio_sample_path(self, index):
@@ -43,5 +54,5 @@ class EmotionSpeechDataset(Dataset):
                                                           sr = fs,
                                                           n_mels = 128, n_fft=2048, hop_length=512)
         logspec = librosa.power_to_db(mel_spectrogram, ref=np.max)
-        logspec = np.expand_dims(logspec, axis=-1)
+        logspec = np.expand_dims(logspec, axis=0)
         return logspec

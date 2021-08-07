@@ -20,27 +20,37 @@ for dir in ravdess_directory_list:
 
     gender = ''
     if int(id) % 2 == 0:
-        gender = 'male'
-    else:
         gender = 'female'
+    else:
+        gender = 'male'
 
-    if int(id) <=20:
+    '''if int(id) <=20:
         set = 0
     elif int(id) <=22:
         set = 1
     else:
-        set = 2
+        set = 2'''
 
     for file in actor:
         part = file.split('.')[0]
         part = part.split('-')
         # third part in each file represents the emotion associated to that file.
+
+        if ((int(part[5])==2 and int(id) % 5 == 0) and int(id)<21) or (int(id)>=21 and int(id)<=22):
+            set = 1
+        elif int(id)<=20:
+            set = 0
+        else:
+            set = 2
+        
         file_emotion[set].append(int(part[2]))
 
         if int(part[2]) in [1,2,3,8]:
-            file_semantics[set].append('positive')
+            file_semantics[set].append(0)
+            #file_semantics[set].append('positive')
         else:
-            file_semantics[set].append('negative')
+            file_semantics[set].append(1)
+            #file_semantics[set].append('negative')
 
         file_path[set].append(os.path.join(ravdess_path,dir,file))
         file_intensity[set].append(int(part[3]))
