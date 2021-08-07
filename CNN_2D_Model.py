@@ -10,19 +10,19 @@ class CNN_2d_Model(nn.Module):
                             kernel_size = 3,
                             stride  = 1,
                             padding = 'same',
-                            bias = False))
+                            bias = False)
         self.conv2 = nn.Conv2d(in_channels = 128,
                                out_channels = 128,
                                kernel_size = 3,
                                stride  = 1,
                                padding = 'same',
-                               bias = False))
+                               bias = False)
         self.conv3=nn.Conv2d(in_channels = 128,
                             out_channels = 64,
                             kernel_size = 3,
                             stride  = 1,
                             padding = 'same',
-                            bias = False))
+                            bias = False)
         self.conv4=nn.Conv2d(in_channels = 64,
                             out_channels = 64,
                             kernel_size = 3,
