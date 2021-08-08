@@ -41,7 +41,7 @@ class CNN_2d_Model(nn.Module):
         self.drop2 = nn.Dropout(0.25)
 
         self.gavgpool = nn.AdaptiveAvgPool2d((1,1))
-        self.fc = nn.Linear(64,8)
+        self.fc = nn.Linear(64,14)
         self.softMax = nn.Softmax()
 
     def forward(self, x):
