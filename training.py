@@ -18,7 +18,7 @@ BATCH_SIZE = 64
 NUM_WORKERS = 5
 EPOCHS = 100
 LEARNING_RATE = 0.0001
-PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\one_classr2.pt"
+PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\Models\NoBN_2c_18_4_2.pt"
 
 if __name__ == '__main__':
 
@@ -58,6 +58,8 @@ if __name__ == '__main__':
     metrics = defaultdict(list)
 
     best_acc = 0
+    stop_count = 0
+    stop = False
     # training loop
     for epoch in range(EPOCHS):
         for state in ['train', 'valid']:
@@ -101,24 +103,33 @@ if __name__ == '__main__':
         
             print(f'Epoch: {epoch} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f} State: {state}')
             
-        # deep copy the model
-        if state == 'valid' and epoch_acc > best_acc:
-            best_acc = epoch_acc
-            best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(model.state_dict(), PATH)
+            if state == 'valid':
+                if epoch_acc > 0.05*best_acc:
+                    stop_count = 0
+                else:
+                    stop_count += 1
+                    if stop_count > 10:
+                        stop = True
 
-    figure = plt.plot(metrics["train_loss"])
-    plt.title('Trening Loss funkcija po epohama')
-    plt.savefig("loss_train.png")
+            # deep copy the model
+            if state == 'valid' and epoch_acc > best_acc:
+                best_acc = epoch_acc
+                best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(model.state_dict(), PATH)
 
-    figure = plt.plot(metrics["val_loss"])
-    plt.title('Validacion loss funkcija po epohama')
-    plt.savefig("loss_valid.png")
+        if stop:
+            break
 
-    figure = plt.plot(metrics["train_acc"])
-    plt.title('Trening acc po epohama')
-    plt.savefig("acc_train.png")
+    plt.figure(1)
+    plt.plot(metrics["train_loss"], 'b', metrics["val_loss"], 'r')
+    plt.title('Loss funkcija po epohama')
+    plt.xlabel('Epoha')
+    plt.ylabel('Loss funkcija')
+    plt.savefig("loss.png")
 
-    figure = plt.plot(metrics["val_acc"])
-    plt.title('Validacion acc po epohama')
-    plt.savefig("acc_tvalid.png")
+    plt.figure(2)
+    plt.plot(metrics["train_loss"], 'b', metrics["val_loss"], 'r')
+    plt.title('Tacnost po epohama')
+    plt.xlabel('Epoha')
+    plt.ylabel('Tacnost funkcija')
+    plt.savefig("acc.png")
