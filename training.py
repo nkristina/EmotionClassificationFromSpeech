@@ -6,7 +6,7 @@ import torchaudio
 import torch.nn as nn
 import EmotionSpeechDataset 
 from torch.utils.data import Dataset, DataLoader
-import CNN_2D_Model as md
+import CNN_2D_Model_7clas as md
 import torch.optim as opt
 import copy
 from collections import defaultdict
@@ -18,7 +18,7 @@ BATCH_SIZE = 64
 NUM_WORKERS = 5
 EPOCHS = 100
 LEARNING_RATE = 0.0001
-PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\one_classr2.pt"
+PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\one_classr7.pt"
 
 if __name__ == '__main__':
 
@@ -78,7 +78,8 @@ if __name__ == '__main__':
 
                 with torch.set_grad_enabled(state == 'train'):
                     output = model(x)
-                    _, preds = torch.max(output, 1)
+                    norm = torch.nn.functional.softmax(output)
+                    _, preds = torch.max(norm, 1)
                     loss = loss_func(output, y)
 
                 if state == 'train':
@@ -107,18 +108,22 @@ if __name__ == '__main__':
             best_model_wts = copy.deepcopy(model.state_dict())
             torch.save(model.state_dict(), PATH)
 
-    figure = plt.plot(metrics["train_loss"])
+    figure = plt.figure()
+    plt.plot(metrics["train_loss"])
     plt.title('Trening Loss funkcija po epohama')
     plt.savefig("loss_train.png")
 
-    figure = plt.plot(metrics["val_loss"])
+    figure = plt.figure()
+    plt.plot(metrics["val_loss"])
     plt.title('Validacion loss funkcija po epohama')
     plt.savefig("loss_valid.png")
 
-    figure = plt.plot(metrics["train_acc"])
+    figure = plt.figure()
+    plt.plot(metrics["train_acc"])
     plt.title('Trening acc po epohama')
     plt.savefig("acc_train.png")
 
-    figure = plt.plot(metrics["val_acc"])
+    figure = plt.figure()
+    plt.plot(metrics["val_acc"])
     plt.title('Validacion acc po epohama')
     plt.savefig("acc_tvalid.png")
