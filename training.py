@@ -18,7 +18,7 @@ BATCH_SIZE = 64
 NUM_WORKERS = 5
 EPOCHS = 100
 LEARNING_RATE = 0.0001
-PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\Models\NoBN_2c_18_4_2.pt"
+PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\Models\BN_WD_2c_18_4_2.pt"
 
 if __name__ == '__main__':
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     model = md.CNN_2d_Model()
     model.cuda()
-    optimizer = opt.Adam(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999))
+    optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999))
     loss_func = nn.CrossEntropyLoss()
 
     summary_writer = SummaryWriter()
@@ -104,11 +104,11 @@ if __name__ == '__main__':
             print(f'Epoch: {epoch} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f} State: {state}')
             
             if state == 'valid':
-                if epoch_acc > 0.05*best_acc:
+                if epoch_acc > best_acc:
                     stop_count = 0
                 else:
                     stop_count += 1
-                    if stop_count > 10:
+                    if stop_count > 15:
                         stop = True
 
             # deep copy the model

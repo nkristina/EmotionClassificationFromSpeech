@@ -28,8 +28,10 @@ for dir in ravdess_directory_list:
         set = 0
     elif int(id) <=22:
         set = 1
-    else:
+    elif int(id) <=24:
         set = 2
+    else:
+        continue
 
     for file in actor:
         part = file.split('.')[0]
