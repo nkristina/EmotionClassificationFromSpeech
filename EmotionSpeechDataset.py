@@ -9,6 +9,7 @@ import os
 import librosa.display
 import librosa.feature
 import numpy as np
+import scipy
 
 import matplotlib.pyplot as plt
 

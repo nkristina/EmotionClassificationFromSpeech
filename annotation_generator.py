@@ -24,24 +24,17 @@ for dir in ravdess_directory_list:
     else:
         gender = 'male'
 
-    '''if int(id) <=20:
+    if int(id) <=18:
         set = 0
     elif int(id) <=22:
         set = 1
     else:
-        set = 2'''
+        set = 2
 
     for file in actor:
         part = file.split('.')[0]
         part = part.split('-')
         # third part in each file represents the emotion associated to that file.
-
-        if ((int(part[5])==2 and int(id) % 5 == 0) and int(id)<21) or (int(id)>=21 and int(id)<=22):
-            set = 1
-        elif int(id)<=20:
-            set = 0
-        else:
-            set = 2
         
         file_emotion[set].append(int(part[2]))
 

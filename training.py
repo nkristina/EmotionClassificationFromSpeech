@@ -17,7 +17,7 @@ import librosa
 BATCH_SIZE = 64
 NUM_WORKERS = 5
 EPOCHS = 100
-LEARNING_RATE = 0.00001
+LEARNING_RATE = 0.0001
 PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\one_classr2.pt"
 
 if __name__ == '__main__':
@@ -36,12 +36,15 @@ if __name__ == '__main__':
                 shuffle = True,
                 num_workers = NUM_WORKERS)
 
-    spec = val_dataset[5][0]
+    dataloaders = {'train': train_dataloader, 'valid': val_dataloader}
+    datasets = {'train': train_dataset, 'valid': val_dataset}
+
+    spec = train_dataset[50][0]
     spec = torch.squeeze(spec,0)
     spec = spec.numpy()
-    librosa.display.specshow(spec, sr=22050, x_axis='time', y_axis='mel') 
+    #librosa.display.specshow(spec, sr=22050, x_axis='time', y_axis='mel') 
     #librosa.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='log')
-    plt.colorbar()
+    #plt.colorbar()
 
     #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     device = torch.device("cuda")
@@ -54,95 +57,68 @@ if __name__ == '__main__':
     summary_writer = SummaryWriter()
     metrics = defaultdict(list)
 
-    best_acc_train = 0
-    best_acc_val = 0
+    best_acc = 0
     # training loop
     for epoch in range(EPOCHS):
-        model.train()
-        running_loss = 0.0
-        running_corrects = 0
-        for i,(x, y) in enumerate(train_dataloader):
-            x = x.to(device)
-            y = y.to(device)
+        for state in ['train', 'valid']:
 
-            optimizer.zero_grad()
-            output = model(x)
+            if state == 'train':
+                model.train()
+            else:
+                model.eval()
 
-            loss = loss_func(output, y)
+            running_loss = 0.0
+            running_corrects = 0
 
-            loss.backward()
-            optimizer.step()
+            for i,(x, y) in enumerate(dataloaders[state]):
+                x = x.to(device)
+                y = y.to(device)
 
-            # statistics
-            _, preds = torch.max(output, 1)
-            running_loss += loss.item() * x.size(0)
-            running_corrects += torch.sum(preds == y.data).item()
+                optimizer.zero_grad()
 
-            #print(f'TRAINING: epoch: {epoch} iteration: {i} loss: {loss}')
-            summary_writer.add_scalar("Traning loss", loss, i)
-    
+                with torch.set_grad_enabled(state == 'train'):
+                    output = model(x)
+                    _, preds = torch.max(output, 1)
+                    loss = loss_func(output, y)
+
+                if state == 'train':
+                    loss.backward()
+                    optimizer.step()
+
+                # statistics
+                running_loss += loss.item() * x.size(0)
+                running_corrects += torch.sum(preds == y.data).item()
+
+                summary_writer.add_scalar(str(state) + " loss", loss, i)
             
-        epoch_loss = running_loss / len(train_dataset)
-        epoch_acc = float(running_corrects) / len(train_dataset)
-        metrics["test_loss"].append(epoch_loss)
-        metrics["test_acc"].append(epoch_acc)
+            epoch_loss = running_loss / len(datasets[state])
+            epoch_acc = float(running_corrects) / len(datasets[state])
+            metrics[state + "_loss"].append(epoch_loss)
+            metrics[state + "_acc"].append(epoch_acc)
 
-        summary_writer.add_scalar("Traning loss per epoch", epoch_loss, epoch)
-        summary_writer.add_scalar("Traning acc per epoch", epoch_acc, epoch)
+            summary_writer.add_scalar(state + " loss per epoch", epoch_loss, epoch)
+            summary_writer.add_scalar(state + " acc per epoch", epoch_acc, epoch)
         
-        print(f'Epoch: {epoch} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+            print(f'Epoch: {epoch} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f} State: {state}')
             
         # deep copy the model
-        if epoch_acc > best_acc_train:
-            best_acc_train = epoch_acc
-
-        model.eval()
-        running_loss = 0.0
-        running_corrects = 0
-        for i, (x,y) in enumerate(val_dataloader):
-            x = x.to(device)
-            y = y.to(device)
-
-            output = model(x)
-            loss = loss_func(output, y)
-
-            # statistics
-            _, preds = torch.max(output, 1)
-            running_loss += loss.item() * x.size(0)
-            running_corrects += torch.sum(preds == y.data).item()
-
-            print(f'VALIDATION: epoch: {epoch} loss: {loss}')
-            summary_writer.add_scalar("Validation loss", loss, i)
-
-        epoch_loss = running_loss / len(val_dataset)
-        epoch_acc = float(running_corrects) / len(val_dataset)
-        metrics["val_loss"].append(epoch_loss)
-        metrics["val_acc"].append(epoch_acc)
-
-        # deep copy the model
-        if epoch_acc > best_acc_val:
-            best_acc_val = epoch_acc
+        if state == 'valid' and epoch_acc > best_acc:
+            best_acc = epoch_acc
             best_model_wts = copy.deepcopy(model.state_dict())
             torch.save(model.state_dict(), PATH)
 
-        summary_writer.add_scalar("Validation loss per epoch", epoch_loss, epoch)
-        summary_writer.add_scalar("Validation acc per epoch", epoch_acc, epoch)
-
-        print(f'Epoch: {epoch} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
-
-
-    plt.plot(metrics["train_loss"])
+    figure = plt.plot(metrics["train_loss"])
     plt.title('Trening Loss funkcija po epohama')
     plt.savefig("loss_train.png")
 
-    plt.plot(metrics["val_loss"])
+    figure = plt.plot(metrics["val_loss"])
     plt.title('Validacion loss funkcija po epohama')
     plt.savefig("loss_valid.png")
 
-    plt.plot(metrics["train_acc"])
+    figure = plt.plot(metrics["train_acc"])
     plt.title('Trening acc po epohama')
     plt.savefig("acc_train.png")
 
-    plt.plot(metrics["val_acc"])
+    figure = plt.plot(metrics["val_acc"])
     plt.title('Validacion acc po epohama')
     plt.savefig("acc_tvalid.png")
