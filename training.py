@@ -6,19 +6,31 @@ import torchaudio
 import torch.nn as nn
 import EmotionSpeechDataset 
 from torch.utils.data import Dataset, DataLoader
-import CNN_2D_Model as md
+import CNN_2D_Model_7clas as md
 import torch.optim as opt
 import copy
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import librosa
+import confusion_matrix
 
 
 BATCH_SIZE = 64
 NUM_WORKERS = 5
 EPOCHS = 100
 LEARNING_RATE = 0.0001
-PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\Models\BN_WD_2c_18_4_2.pt"
+PATH = r"C:\Users\psiml\Desktop\PSIML_projekat\Models\NoBN_WD_14c_20_2_2.pt"
+
+LR_MIN = 0.0001
+LR_MAX = 0.001
+STEP = (LR_MAX - LR_MIN) / 10
+
+target = []
+predicted = []
+best_target = []
+best_predicted = []
+emotions = {0: 'female_neutral', 1: 'female_happy', 2: 'female_sad', 3: 'female_angry', 4: 'female_fear', 5: 'female_disgust', 6: 'female_surprise',
+            7: 'male_neutral', 8: 'male_happy', 9: 'male_sad', 10: 'male_angry', 11: 'male_fear', 12: 'male_disgust', 13: 'male_surprise'}
 
 if __name__ == '__main__':
 
@@ -51,17 +63,29 @@ if __name__ == '__main__':
 
     model = md.CNN_2d_Model()
     model.cuda()
-    optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999))
+    
+    optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999), weight_decay=0.05)
     loss_func = nn.CrossEntropyLoss()
 
     summary_writer = SummaryWriter()
     metrics = defaultdict(list)
 
     best_acc = 0
+    topK_corrects = 0
     stop_count = 0
     stop = False
+    topK_corrects = 0
+    
     # training loop
     for epoch in range(EPOCHS):
+
+        '''if epoch <= 10:
+            LEARNING_RATE = LR_MAX - epoch*STEP
+        else:
+            LEARNING_RATE = LR_MIN'''
+
+        #optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999), weight_decay=0.05)
+        
         for state in ['train', 'valid']:
 
             if state == 'train':
@@ -71,6 +95,10 @@ if __name__ == '__main__':
 
             running_loss = 0.0
             running_corrects = 0
+            topK_corrects = 0
+
+            predicted = []
+            target = []
 
             for i,(x, y) in enumerate(dataloaders[state]):
                 x = x.to(device)
@@ -80,7 +108,9 @@ if __name__ == '__main__':
 
                 with torch.set_grad_enabled(state == 'train'):
                     output = model(x)
-                    _, preds = torch.max(output, 1)
+                    norm = torch.nn.functional.softmax(output)
+                    _, preds = torch.max(norm, 1)
+                    _, topK = torch.topk(norm, 3, 1)
                     loss = loss_func(output, y)
 
                 if state == 'train':
@@ -91,10 +121,18 @@ if __name__ == '__main__':
                 running_loss += loss.item() * x.size(0)
                 running_corrects += torch.sum(preds == y.data).item()
 
+                for i in range(len(preds)):
+                    topK_corrects += y.data[i] in topK[i]
+
+                if state == 'valid':
+                    predicted.extend(preds.tolist())
+                    target.extend(y.tolist())
+
                 summary_writer.add_scalar(str(state) + " loss", loss, i)
             
             epoch_loss = running_loss / len(datasets[state])
             epoch_acc = float(running_corrects) / len(datasets[state])
+            epoch_topK = float(topK_corrects) / len(datasets[state])
             metrics[state + "_loss"].append(epoch_loss)
             metrics[state + "_acc"].append(epoch_acc)
 
@@ -108,7 +146,7 @@ if __name__ == '__main__':
                     stop_count = 0
                 else:
                     stop_count += 1
-                    if stop_count > 15:
+                    if stop_count > 10:
                         stop = True
 
             # deep copy the model
@@ -116,9 +154,19 @@ if __name__ == '__main__':
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
                 torch.save(model.state_dict(), PATH)
+                TOP3 = epoch_topK
+                best_predicted = predicted
+                best_target = target
+                predicted = []
+                target = []
 
         if stop:
             break
+
+    print(TOP3)
+    
+    c_matrix = confusion_matrix.conf_matrix_metrics(best_target, best_predicted, emotions.values())
+    confusion_matrix.plot_conf_mat(c_matrix, 'conf_mat_best_14c_val.png', emotions.values())
 
     plt.figure(1)
     plt.plot(metrics["train_loss"], 'b', metrics["val_loss"], 'r')

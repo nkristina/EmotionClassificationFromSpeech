@@ -17,6 +17,9 @@ audio_duration = 3
 sampling_rate = 22050
 input_length = sampling_rate * audio_duration
 
+label_list_women = {'neutral': 0, 'calm': 0, 'happy':1, 'sad':2, 'angry':3, 'fear':4, 'disgust':5, 'surprise':6}
+label_list_men = {'neutral': 7, 'calm': 7, 'happy':8, 'sad':9, 'angry':10, 'fear':11, 'disgust':12, 'surprise':13}
+
 class EmotionSpeechDataset(Dataset):
 
     def __init__(self, annotations_file):
@@ -26,8 +29,18 @@ class EmotionSpeechDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self,index):
+
         audio_sample_path = self._get_audio_sample_path(index)
-        label = self._get_audio_sample_label(index)
+
+        label, gender = self._get_audio_sample_label(index)
+        if gender == 'male':
+            label = label_list_men[label]
+        else:
+            label = label_list_women[label]
+
+        label = np.asarray(label)
+        label = torch.from_numpy(label)
+        label = label.long()
 
         signal, fs = librosa.load(audio_sample_path)
         signal, _ = librosa.effects.trim(signal, top_db = 25)
@@ -47,7 +60,7 @@ class EmotionSpeechDataset(Dataset):
         return self.annotations.iloc[index, 4]
 
     def _get_audio_sample_label(self, index):
-        return self.annotations.iloc[index, 1]
+        return self.annotations.iloc[index, 0], self.annotations.iloc[index, 3]
 
     def _return_mel_spectrogram(self, signal, fs,  window_size = 20, step_size = 10):
 
