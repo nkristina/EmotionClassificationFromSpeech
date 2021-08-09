@@ -48,32 +48,33 @@ class CNN_2d_Model(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        #x = self.bn1(x)
+        x = self.bn1(x)
         x = self.elu(x)
         x = self.maxpool1(x)
         #x = self.drop1(x)
 
         x = self.conv2(x)
+        x = self.bn2(x)
         x = self.elu(x)
         x = self.maxpool2(x)
-        #x = self.bn1(x)
         #x = self.drop2(x)
         
         x = self.conv3(x)
-        #x = self.bn2(x)
+        x = self.bn3(x)
         x = self.elu(x)
         x = self.maxpool2(x)
-        #x = self.drop2(x)
+        #x = self.drop3(x)
 
         x = self.conv4(x)
+        x = self.bn4(x)
         x = self.elu(x)
         x = self.maxpool2(x)
-        #x = self.bn2(x)
-        #x = self.drop2(x)
+        #x = self.drop4(x)
 
         x = self.gavgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+        #x = self.drop1(x)
         #x = self.softMax(x)
 
         return x 

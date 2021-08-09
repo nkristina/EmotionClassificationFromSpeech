@@ -63,8 +63,8 @@ if __name__ == '__main__':
 
     model = md.CNN_2d_Model()
     model.cuda()
-    # premestam optimizer u for-petlju zbog promenljivog learning rate-a
-    optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999))
+    
+    optimizer = opt.AdamW(model.parameters(), lr = LEARNING_RATE, betas = (0.9,0.999), weight_decay=0.05)
     loss_func = nn.CrossEntropyLoss()
 
     summary_writer = SummaryWriter()
@@ -75,6 +75,7 @@ if __name__ == '__main__':
     stop_count = 0
     stop = False
     topK_corrects = 0
+    
     # training loop
     for epoch in range(EPOCHS):
 
