@@ -2,15 +2,17 @@ import os
 import re
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 ravdess_path = r"C:\Users\psiml\Desktop\PSIML_projekat\dataset\Ravdess\audio_speech_actors_01-24"
 ravdess_directory_list = os.listdir(ravdess_path)
 
-file_emotion = [[],[],[]]
-file_path = [[],[],[]]
-file_gender = [[],[],[]]
-file_intensity = [[],[],[]]
-file_semantics = [[],[],[]]
+file_emotion = [[],[],[],[]]
+file_path = [[],[],[],[]]
+file_gender = [[],[],[],[]]
+file_intensity = [[],[],[],[]]
+file_semantics = [[],[],[],[]]
 
 for dir in ravdess_directory_list:
     # as their are 20 different actors in our previous directory we need to extract files for each actor.
@@ -24,14 +26,14 @@ for dir in ravdess_directory_list:
     else:
         gender = 'male'
 
-    if int(id) <=18:
+    if int(id) <=20:
         set = 0
     elif int(id) <=22:
         set = 1
     elif int(id)<=24:
         set = 2
     else:
-        continue
+        set = 3
 
     for file in actor:
         part = file.split('.')[0]
@@ -96,3 +98,32 @@ Ravdess_test_df.Emotions.replace({1:'neutral', 2:'calm', 3:'happy', 4:'sad', 5:'
 Ravdess_test_df.Intensity.replace({1: 'normal', 2:'strong'}, inplace=True)
 
 Ravdess_test_df.to_csv(r"C:\Users\psiml\Desktop\PSIML_projekat\Ravdess_test.csv",index=False)
+
+# Kristina & Luka
+
+emotion_kl_df = pd.DataFrame(file_emotion[3], columns=['Emotions'])
+gender_kl_df = pd.DataFrame(file_gender[3], columns=['Gender'])
+intensity_kl_df = pd.DataFrame(file_intensity[3], columns=['Intensity'])
+semantics_kl_df = pd.DataFrame(file_semantics[3], columns=['Semantics'])
+path_kl_df = pd.DataFrame(file_path[3], columns=['Path'])
+
+Ravdess_kl_df = pd.concat([emotion_kl_df, semantics_kl_df, intensity_kl_df, gender_kl_df, path_kl_df], axis=1)
+
+Ravdess_kl_df.Emotions.replace({1:'neutral', 2:'calm', 3:'happy', 4:'sad', 5:'angry', 6:'fear', 7:'disgust', 8:'surprise'}, inplace=True)
+Ravdess_kl_df.Intensity.replace({1: 'normal', 2:'strong'}, inplace=True)
+
+Ravdess_kl_df.to_csv(r"C:\Users\psiml\Desktop\PSIML_projekat\Ravdess_kristina_luka.csv",index=False)
+
+# Data distribution
+
+Ravdess_all_data = pd.concat([Ravdess_train_df, Ravdess_val_df, Ravdess_test_df], axis = 0)
+Ravdess_all_data.to_csv("Ravdess_all_data.csv",index=False)
+
+plt.figure()
+plt.title('Count of Emotions', size=16)
+sns.countplot(Ravdess_all_data.Emotions)
+plt.ylabel('Count', size=12)
+plt.xlabel('Emotions', size=12)
+sns.despine(top=True, right=True, left=False, bottom=False)
+plt.show()
+plt.savefig('data_distribution.png')
