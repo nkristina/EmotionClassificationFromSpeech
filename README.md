@@ -1,6 +1,6 @@
 # Emotion Classification From Speach
 
-Clasification human emotions from speech using CNN writen in Python. \
+Clasification of human emotions from speech using CNN writen in Python. \
 Project is done during Petnica Summer Institute of Machine Learning (PSI:ML7).
 
 DataSet used: [RAVDESS](https://www.kaggle.com/uwrfkaggler/ravdess-emotional-speech-audio) \
