@@ -1,4 +1,4 @@
-# Emotion Classification From Speach
+# Emotion Classification From Speech
 
 Clasification of human emotions from speech using CNN writen in Python. \
 Project is done during Petnica Summer Institute of Machine Learning (PSI:ML7).
